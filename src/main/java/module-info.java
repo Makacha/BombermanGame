@@ -1,4 +1,7 @@
 module game {
-    requires javafx.controls;
-    exports game;
+  requires javafx.controls;
+  requires transitive javafx.graphics;
+  requires java.desktop;
+
+  exports game;
 }
