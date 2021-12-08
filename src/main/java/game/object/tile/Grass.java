@@ -1,10 +1,11 @@
 package game.object.tile;
 
+import game.Game;
 import game.graphics.Sprite;
 import game.object.StaticObject;
 
 public class Grass extends StaticObject {
-  public Grass(int x, int y) {
-    super(x, y, Sprite.grass.getFxImage());
+  public Grass(Game game, int x, int y) {
+    super(game, x, y, Sprite.grass.getFxImage());
   }
 }

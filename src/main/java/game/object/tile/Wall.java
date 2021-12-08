@@ -1,10 +1,11 @@
 package game.object.tile;
 
+import game.Game;
 import game.graphics.Sprite;
 import game.object.StaticObject;
 
 public class Wall extends StaticObject {
-  public Wall(int x, int y) {
-    super(x, y, Sprite.wall.getFxImage());
+  public Wall(Game game, int x, int y) {
+    super(game, x, y, Sprite.wall.getFxImage());
   }
 }

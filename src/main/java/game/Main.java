@@ -14,8 +14,10 @@ import javafx.stage.Stage;
  */
 public class Main extends Application {
 
-  public static final int WIDTH = 20;
+  public static final int WIDTH = 21;
   public static final int HEIGHT = 13;
+  public static final int FPS = 60;
+  public static final int TPF = 1_000_000_000 / FPS;
 
   private Canvas canvas;
   private GraphicsContext graphicsContext;
@@ -44,21 +46,27 @@ public class Main extends Application {
     // Create new game
     game = new Game();
     // set key
-    scene.setOnKeyPressed(game::setOnKeyPressed);
-    scene.setOnKeyReleased(game::setOnKeyReleased);
+    scene.setOnKeyPressed(game::onKeyPressed);
+    scene.setOnKeyReleased(game::onKeyReleased);
     // Create timer to control frame per second
     AnimationTimer timer = new AnimationTimer() {
+      private long lastUpdate = 0;
       @Override
       public void handle(long now) {
-        update(now);
-        render();
+        if (now - lastUpdate >= TPF) {
+          update(now);
+          render();
+          lastUpdate = now;
+        }
       }
     };
     timer.start();
   }
 
   public void update(long now) {
-    game.update(now);
+    if (game.isRunning()) {
+      game.update(now);
+    }
   }
 
   public void render() {

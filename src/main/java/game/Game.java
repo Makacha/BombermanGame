@@ -1,11 +1,14 @@
 package game;
 
 import java.io.FileInputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
-import game.object.Object;
+import game.graphics.Sprite;
 import game.object.Player;
 import game.object.StaticObject;
+import game.object.enemy.*;
 import game.object.tile.*;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.KeyEvent;
@@ -17,8 +20,11 @@ public class Game {
   private int top;
   private int level;
   private Player player;
-  private Object[][] objects;
+  private List<Enemy> enemies;
+  private GameObject[][] objects;
   private Grass[][] background;
+  private boolean running = true;
+  private List<KeyEvent> keyList = new ArrayList<>();
 
   public Game() {
     left = 0;
@@ -34,31 +40,31 @@ public class Game {
       Scanner scanner = new Scanner(source);
       height = scanner.nextInt();
       width = scanner.nextInt();
-      objects = new Object[height][width];
-      background= new Grass[height][width];
+      objects = new GameObject[height][width];
+      background = new Grass[height][width];
+      enemies = new ArrayList<>();
       for (int y = 0; y < height; y++) {
         String line = scanner.nextLine();
         if (line.equals("")) {
           line = scanner.nextLine();
         }
         for (int x = 0; x < width; x++) {
-          background[y][x] = new Grass(x, y);
+          background[y][x] = new Grass(this, x, y);
           switch (line.charAt(x)) {
             case 'p':
               if (player == null) {
-                player = new Player(x, y);
+                player = new Player(this, x, y);
               } else {
-                // TODO: reset player
+                player.reset(x, y);
               }
               break;
             case '#':
-              objects[y][x] = new Wall(x, y);
+              objects[y][x] = new Wall(this, x, y);
               break;
             case '*':
-              objects[y][x] = new Brick(x, y);
+              objects[y][x] = new Brick(this, x, y);
               break;
             default:
-              objects[y][x] = new Grass(x, y);
           }
         }
       }
@@ -68,8 +74,72 @@ public class Game {
     }
   }
 
+  public boolean valid(int x, int y) {
+    return y >= 0 && y < height && x >= 0 && x < width;
+  }
+
+  public GameObject get(int x, int y) {
+    return objects[y][x];
+  }
+
+  public void add(int x, int y, GameObject object) {
+    if (valid(x, y) && objects[y][x] == null) {
+      objects[y][x] = object;
+    }
+  }
+
+  public void remove(int x, int y) {
+    if (valid(x, y)) {
+      objects[y][x] = null;
+    }
+  }
+
+  public int collisionLeft(int x, int y) {
+    int xUnit = x / Sprite.SCALED_SIZE;
+    int yUnit = y / Sprite.SCALED_SIZE;
+    if (valid(xUnit, yUnit) && objects[yUnit][xUnit] != null) {
+      return (xUnit + 1) * Sprite.SCALED_SIZE;
+    }
+    return x;
+  }
+
+  public int collisionRight(int x, int y) {
+    int xUnit = x / Sprite.SCALED_SIZE;
+    int yUnit = y / Sprite.SCALED_SIZE;
+    if (valid(xUnit, yUnit) && objects[yUnit][xUnit] != null) {
+      return xUnit * Sprite.SCALED_SIZE - 1;
+    }
+    return x;
+  }
+
+  public int collisionUp(int x, int y) {
+    int xUnit = x / Sprite.SCALED_SIZE;
+    int yUnit = y / Sprite.SCALED_SIZE;
+    if (valid(xUnit, yUnit) && objects[yUnit][xUnit] != null) {
+      return (yUnit + 1) * Sprite.SCALED_SIZE;
+    }
+    return y;
+  }
+
+  public int collisionDown(int x, int y) {
+    int xUnit = x / Sprite.SCALED_SIZE;
+    int yUnit = y / Sprite.SCALED_SIZE;
+    if (valid(xUnit, yUnit) && objects[yUnit][xUnit] != null) {
+      return yUnit * Sprite.SCALED_SIZE - 1;
+    }
+    return y;
+  }
+
   public void update(long now) {
-    // TODO:
+    for (int i = 0; i < height; i++) {
+      for (int j = 0; j < width; j++) {
+        if (objects[i][j] != null) {
+          objects[i][j].update(now);
+        }
+      }
+    }
+    player.update(now);
+    enemies.forEach(enemy -> enemy.update(now));
   }
 
   public void render(GraphicsContext graphicsContext) {
@@ -79,16 +149,47 @@ public class Game {
           objects[i][j].render(graphicsContext, left, top);
         } else {
           background[i][j].render(graphicsContext, left, top);
+          if (objects[i][j] != null) {
+            objects[i][j].render(graphicsContext, left, top);
+          }
         }
       }
     }
+    player.render(graphicsContext, left, top);
+    enemies.forEach(enemy -> enemy.render(graphicsContext, left, top));
   }
 
-  public void setOnKeyPressed(KeyEvent keyEvent) {
-    // TODO:
+  public void onKeyPressed(KeyEvent keyEvent) {
+    switch (keyEvent.getCode()) {
+      case LEFT:
+      case RIGHT:
+      case UP:
+      case DOWN:
+      case SPACE:
+        break;
+      case P:
+        if (running) {
+          running = false;
+        } else {
+          running = true;
+        }
+        break;
+      default:
+        return;
+    }
+    keyList.add(keyEvent);
+    player.onKeyPressed(keyEvent.getCode());
   }
 
-  public void setOnKeyReleased(KeyEvent keyEvent) {
-    // TODO:
+  public void onKeyReleased(KeyEvent keyEvent) {
+    player.onKeyReleased(keyEvent.getCode());
+    keyList.removeIf(e -> e.getCode() == keyEvent.getCode());
+    if (keyList.size() > 0) {
+      player.onKeyPressed(keyList.get(keyList.size() - 1).getCode());
+    }
+  }
+
+  public boolean isRunning() {
+    return running;
   }
 }
