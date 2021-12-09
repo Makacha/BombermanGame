@@ -8,6 +8,7 @@ import javafx.scene.input.KeyCode;
 
 public class Player extends MoveableObject {
   public static final int PLAYER_DURATION_FRAME = 3;
+  public static final double PLAYER_MAX_SPEED = 4.5;
   private int bombPower = 0;
 
   public Player(Game game, int x, int y) {
@@ -26,19 +27,19 @@ public class Player extends MoveableObject {
     switch (keyCode) {
       case LEFT:
         direction = Direction.LEFT;
-        speedX = -(int) speed;
+        speedX = -speed;
         break;
       case RIGHT:
         direction = Direction.RIGHT;
-        speedX = (int) speed;
+        speedX = speed;
         break;
       case UP:
         direction = Direction.UP;
-        speedY = -(int) speed;
+        speedY = -speed;
         break;
       case DOWN:
         direction = Direction.DOWN;
-        speedY = (int) speed;
+        speedY = speed;
         break;
       default:
         direction = Direction.NONE;
@@ -48,17 +49,11 @@ public class Player extends MoveableObject {
   public void onKeyReleased(KeyCode keyCode) {
     switch (keyCode) {
       case LEFT:
-        direction = Direction.NONE;
-        speedX = 0;
-        break;
       case RIGHT:
         direction = Direction.NONE;
         speedX = 0;
         break;
       case UP:
-        direction = Direction.NONE;
-        speedY = 0;
-        break;
       case DOWN:
         direction = Direction.NONE;
         speedY = 0;

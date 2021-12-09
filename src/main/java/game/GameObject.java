@@ -5,8 +5,8 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 
 public abstract class GameObject {
-  protected int x;
-  protected int y;
+  protected double x;
+  protected double y;
   protected int xUnit;
   protected int yUnit;
   protected Image image;
@@ -23,7 +23,23 @@ public abstract class GameObject {
 
   abstract public void update(long now);
 
-  public void render(GraphicsContext graphicsContext, int left, int top) {
+  public void render(GraphicsContext graphicsContext, double left, double top) {
     graphicsContext.drawImage(image, x - left, y - top);
+  }
+
+  public double getX() {
+    return x;
+  }
+
+  public double getY() {
+    return y;
+  }
+
+  public int getxUnit() {
+    return xUnit;
+  }
+
+  public int getyUnit() {
+    return yUnit;
   }
 }

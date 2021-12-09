@@ -14,10 +14,12 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.KeyEvent;
 
 public class Game {
+  private final double SCREEN_HEIGHT;
+  private final double SCREEN_WIDTH;
   private int height;
   private int width;
-  private int left;
-  private int top;
+  private double left;
+  private double top;
   private int level;
   private Player player;
   private List<Enemy> enemies;
@@ -26,7 +28,9 @@ public class Game {
   private boolean running = true;
   private List<KeyEvent> keyList = new ArrayList<>();
 
-  public Game() {
+  public Game(double SCREEN_WIDTH, double SCREEN_HEIGHT) {
+    this.SCREEN_HEIGHT = SCREEN_HEIGHT;
+    this.SCREEN_WIDTH = SCREEN_WIDTH;
     left = 0;
     top = 0;
     level = 1;
@@ -94,36 +98,36 @@ public class Game {
     }
   }
 
-  public int collisionLeft(int x, int y) {
-    int xUnit = x / Sprite.SCALED_SIZE;
-    int yUnit = y / Sprite.SCALED_SIZE;
+  public double collisionLeft(double x, double y) {
+    int xUnit = (int) x / Sprite.SCALED_SIZE;
+    int yUnit = (int) y / Sprite.SCALED_SIZE;
     if (valid(xUnit, yUnit) && objects[yUnit][xUnit] != null) {
       return (xUnit + 1) * Sprite.SCALED_SIZE;
     }
     return x;
   }
 
-  public int collisionRight(int x, int y) {
-    int xUnit = x / Sprite.SCALED_SIZE;
-    int yUnit = y / Sprite.SCALED_SIZE;
+  public double collisionRight(double x, double y) {
+    int xUnit = (int) x / Sprite.SCALED_SIZE;
+    int yUnit = (int) y / Sprite.SCALED_SIZE;
     if (valid(xUnit, yUnit) && objects[yUnit][xUnit] != null) {
       return xUnit * Sprite.SCALED_SIZE - 1;
     }
     return x;
   }
 
-  public int collisionUp(int x, int y) {
-    int xUnit = x / Sprite.SCALED_SIZE;
-    int yUnit = y / Sprite.SCALED_SIZE;
+  public double collisionUp(double x, double y) {
+    int xUnit = (int) x / Sprite.SCALED_SIZE;
+    int yUnit = (int) y / Sprite.SCALED_SIZE;
     if (valid(xUnit, yUnit) && objects[yUnit][xUnit] != null) {
       return (yUnit + 1) * Sprite.SCALED_SIZE;
     }
     return y;
   }
 
-  public int collisionDown(int x, int y) {
-    int xUnit = x / Sprite.SCALED_SIZE;
-    int yUnit = y / Sprite.SCALED_SIZE;
+  public double collisionDown(double x, double y) {
+    int xUnit = (int) x / Sprite.SCALED_SIZE;
+    int yUnit = (int) y / Sprite.SCALED_SIZE;
     if (valid(xUnit, yUnit) && objects[yUnit][xUnit] != null) {
       return yUnit * Sprite.SCALED_SIZE - 1;
     }
@@ -140,6 +144,14 @@ public class Game {
     }
     player.update(now);
     enemies.forEach(enemy -> enemy.update(now));
+    if (player.getX() >= SCREEN_WIDTH / 2
+        && player.getX() <= width * Sprite.SCALED_SIZE - SCREEN_WIDTH / 2.0) {
+      left = player.getX() - SCREEN_WIDTH / 2;
+    }
+    if (player.getY() >= SCREEN_HEIGHT / 2.0
+        && player.getY() <= height * Sprite.SCALED_SIZE - SCREEN_HEIGHT / 2.0) {
+      top = player.getY() - SCREEN_HEIGHT / 2;
+    }
   }
 
   public void render(GraphicsContext graphicsContext) {

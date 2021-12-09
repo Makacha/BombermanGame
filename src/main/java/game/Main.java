@@ -44,13 +44,14 @@ public class Main extends Application {
     stage.setTitle("Bomberman Game");
     stage.show();
     // Create new game
-    game = new Game();
+    game = new Game(canvas.getWidth(), canvas.getHeight());
     // set key
     scene.setOnKeyPressed(game::onKeyPressed);
     scene.setOnKeyReleased(game::onKeyReleased);
     // Create timer to control frame per second
     AnimationTimer timer = new AnimationTimer() {
       private long lastUpdate = 0;
+
       @Override
       public void handle(long now) {
         if (now - lastUpdate >= TPF) {
