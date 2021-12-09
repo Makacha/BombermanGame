@@ -7,16 +7,12 @@ import javafx.scene.image.Image;
 public abstract class GameObject {
   protected double x;
   protected double y;
-  protected int xUnit;
-  protected int yUnit;
   protected Image image;
   protected Game game;
 
   public GameObject(Game game, int xUnit, int yUnit, Image image) {
     this.x = xUnit * Sprite.SCALED_SIZE;
     this.y = yUnit * Sprite.SCALED_SIZE;
-    this.xUnit = xUnit;
-    this.yUnit = yUnit;
     this.image = image;
     this.game = game;
   }
@@ -27,6 +23,18 @@ public abstract class GameObject {
     graphicsContext.drawImage(image, x - left, y - top);
   }
 
+  public boolean checkCollision(GameObject other) {
+    double left = x;
+    double top = y;
+    double right = x + Sprite.SCALED_SIZE - 1;
+    double bottom = y + Sprite.SCALED_SIZE - 1;
+    double otherLeft = other.getX();
+    double otherTop = other.getY();
+    double otherRight = other.getX() + Sprite.SCALED_SIZE - 1;
+    double otherBottom = other.getY() + Sprite.SCALED_SIZE - 1;
+    return !(right < otherLeft || bottom < otherTop || left > otherRight || top > otherBottom);
+  }
+
   public double getX() {
     return x;
   }
@@ -35,11 +43,11 @@ public abstract class GameObject {
     return y;
   }
 
-  public int getxUnit() {
-    return xUnit;
+  public int xUnit() {
+    return (int) x / Sprite.SCALED_SIZE;
   }
 
-  public int getyUnit() {
-    return yUnit;
+  public int yUnit() {
+    return (int) y / Sprite.SCALED_SIZE;
   }
 }

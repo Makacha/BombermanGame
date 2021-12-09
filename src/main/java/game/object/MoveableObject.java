@@ -30,10 +30,19 @@ public abstract class MoveableObject extends DynamicObject {
 
   public abstract void setAnimation();
 
+  public void dead() {
+    alive = false;
+  }
+
   @Override
   public void updateActivity(long now) {
+    updateProperties(now);
     if (direction != Direction.NONE) {
       move();
+    } else {
+      preDirection[1] = preDirection[0];
+      preDirection[0] = Direction.NONE;
+      direction = Direction.NONE;
     }
     switch (direction) {
       case LEFT:
@@ -52,6 +61,8 @@ public abstract class MoveableObject extends DynamicObject {
         animation = animationDefault;
     }
   }
+
+  public abstract void updateProperties(long now);
 
   public void move() {
     jumpDistance = speed * 2.0 - 0.000001;
@@ -120,17 +131,20 @@ public abstract class MoveableObject extends DynamicObject {
       preDirection[1] = preDirection[0];
       preDirection[0] = Direction.NONE;
     }
+    preDirection[1] = preDirection[0];
     if (x < newX) {
       direction = Direction.RIGHT;
+      preDirection[0] = Direction.RIGHT;
     } else if (x > newX) {
       direction = Direction.LEFT;
+      preDirection[0] = Direction.LEFT;
     } else if (y < newY) {
       direction = Direction.DOWN;
+      preDirection[0] = Direction.DOWN;
     } else if (y > newY) {
       direction = Direction.UP;
-    } else {
-      direction = Direction.NONE;
-    }
+      preDirection[0] = Direction.UP;
+    } 
     x = newX;
     y = newY;
   }
@@ -156,14 +170,17 @@ public abstract class MoveableObject extends DynamicObject {
       }
       fixedLeft = game.collisionLeft(newLeft, newTop);
       newLeft = Math.max(fixedLeft, game.collisionLeft(newLeft, newBottom));
-      double[] result = new double[2];
-      result[0] = newLeft;
-      result[1] = newTop;
-      preDirection[1] = preDirection[0];
-      preDirection[0] = Direction.LEFT;
-      return result;
+    } else {
+      fixedLeft = game.collisionLeft(newLeft, y);
+      newLeft = Math.max(fixedLeft, game.collisionLeft(newLeft, y + Sprite.SCALED_SIZE - 1));
+      newTop = y;
     }
     double[] result = new double[0];
+    if (newLeft != x) {
+      result = new double[2];
+      result[0] = newLeft;
+      result[1] = newTop;
+    }
     return result;
   }
 
@@ -189,14 +206,18 @@ public abstract class MoveableObject extends DynamicObject {
       fixedRight = game.collisionRight(newRight, newTop);
       newRight = Math.min(fixedRight, game.collisionRight(newRight, newBottom));
       newLeft = newRight - Sprite.SCALED_SIZE + 1;
-      double[] result = new double[2];
-      result[0] = newLeft;
-      result[1] = newTop;
-      preDirection[1] = preDirection[0];
-      preDirection[0] = Direction.RIGHT;
-      return result;
+    } else {
+      fixedRight = game.collisionRight(newRight, y);
+      newRight = Math.min(fixedRight, game.collisionRight(newRight, y + Sprite.SCALED_SIZE - 1));
+      newLeft = newRight - Sprite.SCALED_SIZE + 1;
+      newTop = y;
     }
     double[] result = new double[0];
+    if (newLeft != x) {
+      result = new double[2];
+      result[0] = newLeft;
+      result[1] = newTop;
+    }
     return result;
   }
 
@@ -221,14 +242,17 @@ public abstract class MoveableObject extends DynamicObject {
       }
       fixedTop = game.collisionUp(newLeft, newTop);
       newTop = Math.max(fixedTop, game.collisionUp(newRight, newTop));
-      double[] result = new double[2];
-      result[0] = newLeft;
-      result[1] = newTop;
-      preDirection[1] = preDirection[0];
-      preDirection[0] = Direction.UP;
-      return result;
+    } else {
+      fixedTop = game.collisionUp(x, newTop);
+      newTop = Math.max(fixedTop, game.collisionUp(x + Sprite.SCALED_SIZE - 1, newTop));
+      newLeft = x;
     }
     double[] result = new double[0];
+    if (newTop != y) {
+      result = new double[2];
+      result[0] = newLeft;
+      result[1] = newTop;
+    }
     return result;
   }
 
@@ -254,14 +278,18 @@ public abstract class MoveableObject extends DynamicObject {
       fixedBottom = game.collisionDown(newLeft, newBottom);
       newBottom = Math.min(fixedBottom, game.collisionDown(newRight, newBottom));
       newTop = newBottom - Sprite.SCALED_SIZE + 1;
-      double[] result = new double[2];
-      result[0] = newLeft;
-      result[1] = newTop;
-      preDirection[1] = preDirection[0];
-      preDirection[0] = Direction.DOWN;
-      return result;
+    } else {
+      fixedBottom = game.collisionDown(x, newBottom);
+      newBottom = Math.min(fixedBottom, game.collisionDown(x + Sprite.SCALED_SIZE - 1, newBottom));
+      newTop = newBottom - Sprite.SCALED_SIZE + 1;
+      newLeft = x;
     }
     double[] result = new double[0];
+    if (newTop != y) {
+      result = new double[2];
+      result[0] = newLeft;
+      result[1] = newTop;
+    }
     return result;
   }
 

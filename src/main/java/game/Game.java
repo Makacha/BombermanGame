@@ -8,7 +8,7 @@ import java.util.Scanner;
 import game.graphics.Sprite;
 import game.object.Player;
 import game.object.StaticObject;
-import game.object.enemy.*;
+import game.object.selfdestruct.Bomb;
 import game.object.tile.*;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.KeyEvent;
@@ -22,7 +22,8 @@ public class Game {
   private double top;
   private int level;
   private Player player;
-  private List<Enemy> enemies;
+  private List<GameObject> enemies;
+  private List<GameObject> otherObjects;
   private GameObject[][] objects;
   private Grass[][] background;
   private boolean running = true;
@@ -47,6 +48,7 @@ public class Game {
       objects = new GameObject[height][width];
       background = new Grass[height][width];
       enemies = new ArrayList<>();
+      otherObjects = new ArrayList<>();
       for (int y = 0; y < height; y++) {
         String line = scanner.nextLine();
         if (line.equals("")) {
@@ -83,7 +85,10 @@ public class Game {
   }
 
   public GameObject get(int x, int y) {
-    return objects[y][x];
+    if (valid(x, y)) {
+      return objects[y][x];
+    }
+    return null;
   }
 
   public void add(int x, int y, GameObject object) {
@@ -96,6 +101,30 @@ public class Game {
     if (valid(x, y)) {
       objects[y][x] = null;
     }
+  }
+
+  public void addObject(GameObject object) {
+    if (valid(object.xUnit(), object.yUnit())) {
+      otherObjects.add(object);
+    }
+  }
+
+  public void removeObject(GameObject object) {
+    otherObjects.remove(object);
+  }
+
+  public boolean canPlaceBomb(int x, int y) {
+    if (valid(x, y)) {
+      for (GameObject object : otherObjects) {
+        if (object instanceof Bomb && object.xUnit() == x && object.yUnit() == y) {
+          return false;
+        }
+      }
+      if (objects[y][x] != null) {
+        return false;
+      }
+    }
+    return true;
   }
 
   public double collisionLeft(double x, double y) {
@@ -143,7 +172,12 @@ public class Game {
       }
     }
     player.update(now);
-    enemies.forEach(enemy -> enemy.update(now));
+    for (int i = 0; i < enemies.size(); i++) {
+      enemies.get(i).update(now);
+    }
+    for (int i = 0; i < otherObjects.size(); i++) {
+      otherObjects.get(i).update(now);
+    }
     if (player.getX() >= SCREEN_WIDTH / 2
         && player.getX() <= width * Sprite.SCALED_SIZE - SCREEN_WIDTH / 2.0) {
       left = player.getX() - SCREEN_WIDTH / 2;
@@ -168,7 +202,14 @@ public class Game {
       }
     }
     player.render(graphicsContext, left, top);
-    enemies.forEach(enemy -> enemy.render(graphicsContext, left, top));
+    for (int i = 0; i < enemies.size(); i++) {
+      enemies.get(i).render(graphicsContext, left, top);
+      ;
+    }
+    for (int i = 0; i < otherObjects.size(); i++) {
+      otherObjects.get(i).render(graphicsContext, left, top);
+      ;
+    }
   }
 
   public void onKeyPressed(KeyEvent keyEvent) {
@@ -203,5 +244,9 @@ public class Game {
 
   public boolean isRunning() {
     return running;
+  }
+
+  public List<GameObject> getEnemies() {
+    return enemies;
   }
 }

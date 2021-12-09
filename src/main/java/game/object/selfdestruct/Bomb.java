@@ -6,17 +6,18 @@ import game.graphics.Animation;
 import game.object.DynamicObject;
 import game.object.Player;
 import game.object.tile.Brick;
-import game.object.tile.Wall;
 
 public class Bomb extends DynamicObject {
   public static final int BOMB_DURATION_IMAGE = 7;
   private long setTime;
   private Player owner;
+  private int size;
 
-  public Bomb(Game game, int x, int y, Player owner, long setTime) {
+  public Bomb(Game game, int x, int y, Player owner, long setTime, int size) {
     super(game, x, y, BOMB_DURATION_IMAGE, Animation.bomb.getFxImages());
     this.owner = owner;
     this.setTime = setTime;
+    this.size = size;
   }
 
   @Override
@@ -24,65 +25,86 @@ public class Bomb extends DynamicObject {
     if (now - setTime >= 2_000_000_000) {
       selfDestruct();
     } else {
-      // TODO:
+      if (!checkCollision(owner)) {
+        if (game.get(xUnit(), yUnit()) == null) {
+          game.removeObject(this);
+          game.add(xUnit(), yUnit(), this);
+        }
+      }
     }
   }
 
   public void selfDestruct() {
-    game.remove(xUnit, yUnit);
-    game.add(xUnit, yUnit, new FlameCenter(game, xUnit, yUnit));
-    game.add(xUnit - 1, yUnit, new FlameHorizontalLeft(game, xUnit - 1, yUnit));
-    game.add(xUnit + 1, yUnit, new FlameHorizontalRight(game, xUnit + 1, yUnit));
-    game.add(xUnit, yUnit - 1, new FlameVerticalTop(game, xUnit, yUnit - 1));
-    game.add(xUnit, yUnit + 1, new FlameVerticalBottom(game, xUnit, yUnit + 1));
+    game.addObject(new FlameCenter(game, xUnit(), yUnit()));
     // left
-    for (int i = 1; i < owner.getBombPower(); i++) {
-      GameObject object = game.get(xUnit - i, yUnit);
-      if (object instanceof Wall) {
-        break;
-      } else if (object instanceof Brick) {
-        game.remove(xUnit - i, yUnit);
-        game.add(xUnit - i, yUnit, new BrickExplode(game, xUnit - i, yUnit));
+    for (int i = 1; i <= size; i++) {
+      GameObject object = game.get(xUnit() - i, yUnit());
+      if (object != null) {
+        if (object instanceof Brick) {
+          game.remove(xUnit() - i, yUnit());
+          game.addObject(new BrickExplode(game, xUnit() - i, yUnit()));
+        }
         break;
       }
-      game.add(xUnit - i, yUnit, new FlameHorizontal(game, xUnit - i, yUnit));
+      if (i < size) {
+        game.addObject(new FlameHorizontal(game, xUnit() - i, yUnit()));
+      } else {
+        game.addObject(new FlameHorizontalLeft(game, xUnit() - size, yUnit()));
+      }
     }
     // right
-    for (int i = 1; i < owner.getBombPower(); i++) {
-      GameObject object = game.get(xUnit + i, yUnit);
-      if (object instanceof Wall) {
-        break;
-      } else if (object instanceof Brick) {
-        game.remove(xUnit + i, yUnit);
-        game.add(xUnit + i, yUnit, new BrickExplode(game, xUnit + i, yUnit));
+    for (int i = 1; i <= size; i++) {
+      GameObject object = game.get(xUnit() + i, yUnit());
+      if (object != null) {
+        if (object instanceof Brick) {
+          game.remove(xUnit() + i, yUnit());
+          game.addObject(new BrickExplode(game, xUnit() + i, yUnit()));
+        }
         break;
       }
-      game.add(xUnit + i, yUnit, new FlameHorizontal(game, xUnit + i, yUnit));
+      if (i < size) {
+        game.addObject(new FlameHorizontal(game, xUnit() + i, yUnit()));
+      } else {
+        game.addObject(new FlameHorizontalRight(game, xUnit() + size, yUnit()));
+      }
     }
     // up
-    for (int i = 1; i < owner.getBombPower(); i++) {
-      GameObject object = game.get(xUnit, yUnit - i);
-      if (object instanceof Wall) {
-        break;
-      } else if (object instanceof Brick) {
-        game.remove(xUnit, yUnit - i);
-        game.add(xUnit, yUnit - i, new BrickExplode(game, xUnit, yUnit - i));
+    for (int i = 1; i <= size; i++) {
+      GameObject object = game.get(xUnit(), yUnit() - i);
+      if (object != null) {
+        if (object instanceof Brick) {
+          game.remove(xUnit(), yUnit() - i);
+          game.addObject(new BrickExplode(game, xUnit(), yUnit() - i));
+        }
         break;
       }
-      game.add(xUnit, yUnit - i, new FlameVertical(game, xUnit, yUnit - i));
+      if (i < size) {
+        game.addObject(new FlameVertical(game, xUnit(), yUnit() - i));
+      } else {
+        game.addObject(new FlameVerticalTop(game, xUnit(), yUnit() - size));
+      }
     }
     // down
-    for (int i = 1; i < owner.getBombPower(); i++) {
-      GameObject object = game.get(xUnit, yUnit + i);
-      if (object instanceof Wall) {
-        break;
-      } else if (object instanceof Brick) {
-        game.remove(xUnit, yUnit + i);
-        game.add(xUnit, yUnit + i, new BrickExplode(game, xUnit, yUnit + i));
+    for (int i = 1; i <= size; i++) {
+      GameObject object = game.get(xUnit(), yUnit() + i);
+      if (object != null) {
+        if (object instanceof Brick) {
+          game.remove(xUnit(), yUnit() + i);
+          game.addObject(new BrickExplode(game, xUnit(), yUnit() + i));
+        }
         break;
       }
-      game.add(xUnit, yUnit + i, new FlameVertical(game, xUnit, yUnit + i));
+      if (i < size) {
+        game.addObject(new FlameVertical(game, xUnit(), yUnit() + i));
+      } else {
+        game.addObject(new FlameVerticalBottom(game, xUnit(), yUnit() + size));
+      }
     }
+    if (game.get(xUnit(), yUnit()) == null) {
+      game.removeObject(this);
+    } else {
+      game.remove(xUnit(), yUnit());
+    }
+    owner.bombExploded();
   }
-
 }
