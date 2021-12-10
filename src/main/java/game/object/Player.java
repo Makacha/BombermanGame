@@ -4,6 +4,7 @@ import game.Game;
 import game.graphics.Animation;
 import game.graphics.Sprite;
 import game.object.selfdestruct.Bomb;
+import game.object.selfdestruct.PlayerDead;
 import game.util.Direction;
 import javafx.scene.input.KeyCode;
 
@@ -14,6 +15,7 @@ public class Player extends MoveableObject {
   private int numberBombs = 1;
   private int countBombs = 0;
   private int bombPower = 1;
+  private int lives = 3;
 
   public Player(Game game, int x, int y) {
     super(game, x, y, PLAYER_DURATION_FRAME, Animation.player_default.getFxImages());
@@ -28,11 +30,26 @@ public class Player extends MoveableObject {
   }
 
   @Override
-  public void updateProperties(long now) {
+  public void update(long now) {
+    if (!alive) {
+      lives--;
+      stunned = true;
+      System.out.println("Player is dead! Remain lives: " + lives);
+      if (lives > 0) {
+        System.out.println("Game restart!");
+        game.setRestart(true);
+      } else {
+        game.setOver(true);
+      }
+      PlayerDead playerDead = new PlayerDead(game, x, y);
+      game.addObject(playerDead);
+      return;
+    }
     if (newBomb) {
       newBomb = false;
       placeBomb(now);
     }
+    super.update(now);
   }
 
   public void placeBomb(long now) {
@@ -44,8 +61,16 @@ public class Player extends MoveableObject {
     }
   }
 
-  public void increaseBomb() {
-    numberBombs++;
+  public void increaseBomb(int value) {
+    numberBombs += value;
+  }
+
+  public void increaseBombPower(int value) {
+    bombPower += value;
+  }
+
+  public void inscreaseSpeed(double value) {
+    speed += value;
   }
 
   public void bombExploded() {
@@ -56,6 +81,21 @@ public class Player extends MoveableObject {
     this.x = xUnit * Sprite.SCALED_SIZE;
     this.y = yUnit * Sprite.SCALED_SIZE;
     direction = Direction.NONE;
+    alive = true;
+    stunned = false;
+    countBombs = 0;
+  }
+
+  public void restart(int xUnit, int yUnit) {
+    // TODO: get log
+    this.x = xUnit * Sprite.SCALED_SIZE;
+    this.y = yUnit * Sprite.SCALED_SIZE;
+    direction = Direction.NONE;
+    alive = true;
+    stunned = false;
+    speed = DEFAULT_SPEED;
+    numberBombs = 1;
+    bombPower = 1;
     countBombs = 0;
   }
 

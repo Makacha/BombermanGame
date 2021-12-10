@@ -19,6 +19,7 @@ public abstract class MoveableObject extends DynamicObject {
   protected double speedX;
   protected double speedY;
   protected boolean alive = true;
+  protected boolean stunned = false;
 
   public MoveableObject(Game game, int x, int y, int durationImage, Image... images) {
     super(game, x, y, durationImage, images);
@@ -30,14 +31,9 @@ public abstract class MoveableObject extends DynamicObject {
 
   public abstract void setAnimation();
 
-  public void dead() {
-    alive = false;
-  }
-
   @Override
-  public void updateActivity(long now) {
-    updateProperties(now);
-    if (direction != Direction.NONE) {
+  public void update(long now) {
+    if (direction != Direction.NONE && !isStunned()) {
       move();
     } else {
       preDirection[1] = preDirection[0];
@@ -60,9 +56,8 @@ public abstract class MoveableObject extends DynamicObject {
       default:
         animation = animationDefault;
     }
+    super.update(now);
   }
-
-  public abstract void updateProperties(long now);
 
   public void move() {
     jumpDistance = speed * 2.0 - 0.000001;
@@ -144,7 +139,7 @@ public abstract class MoveableObject extends DynamicObject {
     } else if (y > newY) {
       direction = Direction.UP;
       preDirection[0] = Direction.UP;
-    } 
+    }
     x = newX;
     y = newY;
   }
@@ -295,5 +290,21 @@ public abstract class MoveableObject extends DynamicObject {
 
   public boolean isAlive() {
     return alive;
+  }
+
+  public boolean isStunned() {
+    return stunned;
+  }
+
+  public void setAlive(boolean alive) {
+    this.alive = alive;
+  }
+
+  public void setStunned(boolean stunned) {
+    this.stunned = stunned;
+  }
+
+  public double getJumpDistance() {
+    return jumpDistance;
   }
 }

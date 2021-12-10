@@ -18,11 +18,9 @@ public abstract class DynamicObject extends GameObject {
 
   @Override
   public void update(long now) {
-    updateActivity(now);
     updateAnimation();
   }
 
-  public abstract void updateActivity(long now);
 
   public void updateAnimation() {
     countFrame++;

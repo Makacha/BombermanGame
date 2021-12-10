@@ -8,7 +8,10 @@ import java.util.Scanner;
 import game.graphics.Sprite;
 import game.object.Player;
 import game.object.StaticObject;
-import game.object.selfdestruct.Bomb;
+import game.object.enemy.Balloom;
+import game.object.enemy.Oneal;
+import game.object.item.*;
+import game.object.selfdestruct.*;
 import game.object.tile.*;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.KeyEvent;
@@ -27,6 +30,8 @@ public class Game {
   private GameObject[][] objects;
   private Grass[][] background;
   private boolean running = true;
+  private boolean restart = false;
+  private boolean over = false;
   private List<KeyEvent> keyList = new ArrayList<>();
 
   public Game(double SCREEN_WIDTH, double SCREEN_HEIGHT) {
@@ -61,7 +66,11 @@ public class Game {
               if (player == null) {
                 player = new Player(this, x, y);
               } else {
-                player.reset(x, y);
+                if (restart) {
+                  player.restart(x, y);
+                } else {
+                  player.reset(x, y);
+                }
               }
               break;
             case '#':
@@ -69,6 +78,24 @@ public class Game {
               break;
             case '*':
               objects[y][x] = new Brick(this, x, y);
+              break;
+            case '1':
+              enemies.add(new Balloom(this, x, y));
+              break;
+            case '2':
+              enemies.add(new Oneal(this, x, y));
+              break;
+            case 'f':
+              objects[y][x] = new Brick(this, x, y, new FlameItem(this, x, y));
+              break;
+            case 'b':
+              objects[y][x] = new Brick(this, x, y, new BombItem(this, x, y));
+              break;
+            case 's':
+              objects[y][x] = new Brick(this, x, y, new SpeedItem(this, x, y));
+              break;
+            case 'x':
+              objects[y][x] = new Brick(this, x, y, new Portal(this, x, y));
               break;
             default:
           }
@@ -91,6 +118,15 @@ public class Game {
     return null;
   }
 
+  public GameObject getObject(int x, int y) {
+    for (GameObject object : otherObjects) {
+      if (object.xUnit() == x && object.yUnit() == y) {
+        return object;
+      }
+    }
+    return null;
+  }
+
   public void add(int x, int y, GameObject object) {
     if (valid(x, y) && objects[y][x] == null) {
       objects[y][x] = object;
@@ -99,6 +135,13 @@ public class Game {
 
   public void remove(int x, int y) {
     if (valid(x, y)) {
+      if (objects[y][x] instanceof Brick) {
+        Brick brick = (Brick) objects[y][x];
+        if (brick.getBehindObject() != null) {
+          addObject(brick.getBehindObject());
+        }
+        addObject(new BrickExplode(this, x, y));
+      }
       objects[y][x] = null;
     }
   }
@@ -113,10 +156,19 @@ public class Game {
     otherObjects.remove(object);
   }
 
+  public void removeEnemy(GameObject object) {
+    enemies.remove(object);
+  }
+
   public boolean canPlaceBomb(int x, int y) {
     if (valid(x, y)) {
       for (GameObject object : otherObjects) {
         if (object instanceof Bomb && object.xUnit() == x && object.yUnit() == y) {
+          return false;
+        }
+      }
+      for (GameObject enemy : enemies) {
+        if (enemy.checkCollision(x, y)) {
           return false;
         }
       }
@@ -125,6 +177,77 @@ public class Game {
       }
     }
     return true;
+  }
+
+  public void update(long now) {
+    boolean completeDead = true;
+    for (GameObject otherObject : otherObjects) {
+      if (otherObject instanceof PlayerDead) {
+        completeDead = false;
+      }
+    }
+    if (over && completeDead) {
+      System.out.println("Game over!");
+      System.exit(0);
+    }
+    if (restart && completeDead) {
+      top = 0;
+      left = 0;
+      createMap();
+      restart = false;
+    }
+    for (int i = 0; i < height; i++) {
+      for (int j = 0; j < width; j++) {
+        if (objects[i][j] != null) {
+          objects[i][j].update(now);
+        }
+      }
+    }
+    if (!restart && !over) {
+      player.update(now);
+    }
+    for (int i = 0; i < enemies.size(); i++) {
+      enemies.get(i).update(now);
+    }
+    for (int i = 0; i < otherObjects.size(); i++) {
+      otherObjects.get(i).update(now);
+    }
+    if (player.getX() >= SCREEN_WIDTH / 2
+        && player.getX() <= width * Sprite.SCALED_SIZE - SCREEN_WIDTH / 2.0) {
+      left = player.getX() - SCREEN_WIDTH / 2;
+    }
+    if (player.getY() >= SCREEN_HEIGHT / 2.0
+        && player.getY() <= height * Sprite.SCALED_SIZE - SCREEN_HEIGHT / 2.0) {
+      top = player.getY() - SCREEN_HEIGHT / 2;
+    }
+  }
+
+  public void render(GraphicsContext graphicsContext) {
+    for (int i = 0; i < height; i++) {
+      for (int j = 0; j < width; j++) {
+        if (objects[i][j] instanceof StaticObject) {
+          objects[i][j].render(graphicsContext, left, top);
+        } else {
+          background[i][j].render(graphicsContext, left, top);
+        }
+      }
+    }
+    for (int i = 0; i < otherObjects.size(); i++) {
+      otherObjects.get(i).render(graphicsContext, left, top);
+    }
+    if (!restart && !over) {
+      player.render(graphicsContext, left, top);
+    }
+    for (int i = 0; i < height; i++) {
+      for (int j = 0; j < width; j++) {
+        if (objects[i][j] != null && !(objects[i][j] instanceof StaticObject)) {
+          objects[i][j].render(graphicsContext, left, top);
+        }
+      }
+    }
+    for (int i = 0; i < enemies.size(); i++) {
+      enemies.get(i).render(graphicsContext, left, top);
+    }
   }
 
   public double collisionLeft(double x, double y) {
@@ -163,55 +286,6 @@ public class Game {
     return y;
   }
 
-  public void update(long now) {
-    for (int i = 0; i < height; i++) {
-      for (int j = 0; j < width; j++) {
-        if (objects[i][j] != null) {
-          objects[i][j].update(now);
-        }
-      }
-    }
-    player.update(now);
-    for (int i = 0; i < enemies.size(); i++) {
-      enemies.get(i).update(now);
-    }
-    for (int i = 0; i < otherObjects.size(); i++) {
-      otherObjects.get(i).update(now);
-    }
-    if (player.getX() >= SCREEN_WIDTH / 2
-        && player.getX() <= width * Sprite.SCALED_SIZE - SCREEN_WIDTH / 2.0) {
-      left = player.getX() - SCREEN_WIDTH / 2;
-    }
-    if (player.getY() >= SCREEN_HEIGHT / 2.0
-        && player.getY() <= height * Sprite.SCALED_SIZE - SCREEN_HEIGHT / 2.0) {
-      top = player.getY() - SCREEN_HEIGHT / 2;
-    }
-  }
-
-  public void render(GraphicsContext graphicsContext) {
-    for (int i = 0; i < height; i++) {
-      for (int j = 0; j < width; j++) {
-        if (objects[i][j] instanceof StaticObject) {
-          objects[i][j].render(graphicsContext, left, top);
-        } else {
-          background[i][j].render(graphicsContext, left, top);
-          if (objects[i][j] != null) {
-            objects[i][j].render(graphicsContext, left, top);
-          }
-        }
-      }
-    }
-    player.render(graphicsContext, left, top);
-    for (int i = 0; i < enemies.size(); i++) {
-      enemies.get(i).render(graphicsContext, left, top);
-      ;
-    }
-    for (int i = 0; i < otherObjects.size(); i++) {
-      otherObjects.get(i).render(graphicsContext, left, top);
-      ;
-    }
-  }
-
   public void onKeyPressed(KeyEvent keyEvent) {
     switch (keyEvent.getCode()) {
       case LEFT:
@@ -226,6 +300,9 @@ public class Game {
         } else {
           running = true;
         }
+        break;
+      case F5:
+        restart = true;
         break;
       default:
         return;
@@ -249,4 +326,17 @@ public class Game {
   public List<GameObject> getEnemies() {
     return enemies;
   }
+
+  public GameObject getPlayer() {
+    return player;
+  }
+
+  public void setRestart(boolean over) {
+    this.restart = over;
+  }
+
+  public void setOver(boolean over) {
+    this.over = over;
+  }
+
 }

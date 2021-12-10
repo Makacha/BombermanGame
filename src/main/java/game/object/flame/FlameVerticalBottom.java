@@ -1,4 +1,4 @@
-package game.object.selfdestruct;
+package game.object.flame;
 
 import game.Game;
 import game.graphics.Animation;

@@ -5,10 +5,18 @@ import game.GameObject;
 import game.graphics.Animation;
 import game.object.DynamicObject;
 import game.object.Player;
+import game.object.flame.FlameCenter;
+import game.object.flame.FlameHorizontal;
+import game.object.flame.FlameHorizontalLeft;
+import game.object.flame.FlameHorizontalRight;
+import game.object.flame.FlameVertical;
+import game.object.flame.FlameVerticalBottom;
+import game.object.flame.FlameVerticalTop;
 import game.object.tile.Brick;
 
 public class Bomb extends DynamicObject {
   public static final int BOMB_DURATION_IMAGE = 7;
+  public static final long BOMB_DURATION_TIME = 2_000_000_000L;
   private long setTime;
   private Player owner;
   private int size;
@@ -21,8 +29,8 @@ public class Bomb extends DynamicObject {
   }
 
   @Override
-  public void updateActivity(long now) {
-    if (now - setTime >= 2_000_000_000) {
+  public void update(long now) {
+    if (now - setTime >= BOMB_DURATION_TIME) {
       selfDestruct();
     } else {
       if (!checkCollision(owner)) {
@@ -32,18 +40,14 @@ public class Bomb extends DynamicObject {
         }
       }
     }
+    super.update(now);
   }
 
   public void selfDestruct() {
     game.addObject(new FlameCenter(game, xUnit(), yUnit()));
     // left
     for (int i = 1; i <= size; i++) {
-      GameObject object = game.get(xUnit() - i, yUnit());
-      if (object != null) {
-        if (object instanceof Brick) {
-          game.remove(xUnit() - i, yUnit());
-          game.addObject(new BrickExplode(game, xUnit() - i, yUnit()));
-        }
+      if (checkObject(xUnit() - i, yUnit())) {
         break;
       }
       if (i < size) {
@@ -54,12 +58,7 @@ public class Bomb extends DynamicObject {
     }
     // right
     for (int i = 1; i <= size; i++) {
-      GameObject object = game.get(xUnit() + i, yUnit());
-      if (object != null) {
-        if (object instanceof Brick) {
-          game.remove(xUnit() + i, yUnit());
-          game.addObject(new BrickExplode(game, xUnit() + i, yUnit()));
-        }
+      if (checkObject(xUnit() + i, yUnit())) {
         break;
       }
       if (i < size) {
@@ -70,12 +69,7 @@ public class Bomb extends DynamicObject {
     }
     // up
     for (int i = 1; i <= size; i++) {
-      GameObject object = game.get(xUnit(), yUnit() - i);
-      if (object != null) {
-        if (object instanceof Brick) {
-          game.remove(xUnit(), yUnit() - i);
-          game.addObject(new BrickExplode(game, xUnit(), yUnit() - i));
-        }
+      if (checkObject(xUnit(), yUnit() - i)) {
         break;
       }
       if (i < size) {
@@ -86,12 +80,7 @@ public class Bomb extends DynamicObject {
     }
     // down
     for (int i = 1; i <= size; i++) {
-      GameObject object = game.get(xUnit(), yUnit() + i);
-      if (object != null) {
-        if (object instanceof Brick) {
-          game.remove(xUnit(), yUnit() + i);
-          game.addObject(new BrickExplode(game, xUnit(), yUnit() + i));
-        }
+      if (checkObject(xUnit(), yUnit() + i)) {
         break;
       }
       if (i < size) {
@@ -100,11 +89,25 @@ public class Bomb extends DynamicObject {
         game.addObject(new FlameVerticalBottom(game, xUnit(), yUnit() + size));
       }
     }
+    owner.bombExploded();
     if (game.get(xUnit(), yUnit()) == null) {
       game.removeObject(this);
     } else {
       game.remove(xUnit(), yUnit());
     }
-    owner.bombExploded();
+  }
+
+  public boolean checkObject(int x, int y) {
+    GameObject object = game.get(x, y);
+    if (object != null) {
+      if (object instanceof Bomb) {
+        return false;
+      }
+      if (object instanceof Brick) {
+        game.remove(x, y);
+      }
+      return true;
+    }
+    return false;
   }
 }
