@@ -18,8 +18,8 @@ public class Portal extends StaticObject {
     Player player = (Player) game.getPlayer();
     if (Math.abs(x - player.getX()) <= player.getJumpDistance()
         && Math.abs(y - player.getY()) <= player.getJumpDistance()) {
-          System.out.println("You win!");;
-          System.exit(0);
+          game.nextLevel();
+          System.out.println("Level passed!");
     }
   }
 }

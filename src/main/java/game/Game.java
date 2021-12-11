@@ -43,6 +43,14 @@ public class Game {
     createMap();
   }
 
+  public void nextLevel() {
+    level++;
+    running = true;
+    restart = false;
+    over = false;
+    createMap();
+  }
+
   public void createMap() {
     try {
       String sourcePath = "/map/level" + level + ".txt";
@@ -103,7 +111,8 @@ public class Game {
       }
       scanner.close();
     } catch (Exception e) {
-      System.out.println(e.getMessage());
+      System.out.println("You win!");
+      System.exit(0);
     }
   }
 
